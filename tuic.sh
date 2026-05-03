@@ -166,7 +166,7 @@ main() {
     check_tuic_server
   fi
 
-  ip="$(get_server_ip)"
+  ip="85.215.220.246"
   generate_link "$ip"
   run_background_loop
 }
