@@ -68,7 +68,7 @@ check_tuic_server() {
     echo "server already exists."
     return
   fi
-  echo "Downloading tuic-server..."
+  echo "Downloading tu"
   curl -L -o "$TUIC_BIN" "https://github.com/Itsusinn/tuic/releases/download/v1.7.2/tuic-server-x86_64-linux"
   chmod +x "$TUIC_BIN"
 }
@@ -144,7 +144,7 @@ EOF
 
 # ========== 守护进程 ==========
 run_background_loop() {
-  echo "Starting TUIC server..."
+  echo "Starting server..."
   while true; do
     "$TUIC_BIN" -c "$SERVER_TOML" >/dev/null 2>&1 || true
     echo "TU crashed. Restarting in 5s..."
