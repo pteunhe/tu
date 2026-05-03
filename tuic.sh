@@ -9,10 +9,10 @@ IFS=$'\n\t'
 
 MASQ_DOMAIN="www.bing.com"
 SERVER_TOML="server.toml"
-CERT_PEM="tuic-cert.pem"
-KEY_PEM="tuic-key.pem"
-LINK_TXT="tuic_link.txt"
-TUIC_BIN="./tuic-server"
+CERT_PEM="tu-cert.pem"
+KEY_PEM="tu-key.pem"
+LINK_TXT="tu_link.txt"
+TUIC_BIN="./server"
 
 # ========== 随机端口 ==========
 random_port() {
@@ -23,18 +23,18 @@ random_port() {
 read_port() {
   if [[ $# -ge 1 && -n "${1:-}" ]]; then
     TUIC_PORT="$1"
-    echo "✅ Using specified port: $TUIC_PORT"
+    echo "Using specified port: $TUIC_PORT"
     return
   fi
 
   if [[ -n "${SERVER_PORT:-}" ]]; then
     TUIC_PORT="$SERVER_PORT"
-    echo "✅ Using environment port: $TUIC_PORT"
+    echo "Using environment port: $TUIC_PORT"
     return
   fi
 
   TUIC_PORT=$(random_port)
-  echo "🎲 Random port selected: $TUIC_PORT"
+  echo "Random port selected: $TUIC_PORT"
 }
 
 # ========== 检查已有配置 ==========
@@ -43,7 +43,7 @@ load_existing_config() {
     TUIC_PORT=$(grep '^server' "$SERVER_TOML" | grep -Eo '[0-9]+')
     TUIC_UUID=$(grep '^\[users\]' -A1 "$SERVER_TOML" | tail -n1 | awk '{print $1}')
     TUIC_PASSWORD=$(grep '^\[users\]' -A1 "$SERVER_TOML" | tail -n1 | awk -F'"' '{print $2}')
-    echo "📂 Existing config detected. Loading..."
+    echo "Existing config detected. Loading..."
     return 0
   fi
   return 1
@@ -52,10 +52,10 @@ load_existing_config() {
 # ========== 生成证书 ==========
 generate_cert() {
   if [[ -f "$CERT_PEM" && -f "$KEY_PEM" ]]; then
-    echo "🔐 Certificate exists, skipping."
+    echo "Certificate exists, skipping."
     return
   fi
-  echo "🔐 Generating self-signed certificate for ${MASQ_DOMAIN}..."
+  echo "Generating self-signed certificate for ${MASQ_DOMAIN}..."
   openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
     -keyout "$KEY_PEM" -out "$CERT_PEM" -subj "/CN=${MASQ_DOMAIN}" -days 365 -nodes >/dev/null 2>&1
   chmod 600 "$KEY_PEM"
@@ -65,11 +65,11 @@ generate_cert() {
 # ========== 下载 tuic-server ==========
 check_tuic_server() {
   if [[ -x "$TUIC_BIN" ]]; then
-    echo "✅ tuic-server already exists."
+    echo "server already exists."
     return
   fi
-  echo "📥 Downloading tuic-server..."
-  curl -L -o "$TUIC_BIN" "https://github.com/Itsusinn/tuic/releases/download/v1.4.5/tuic-server-x86_64-linux"
+  echo "Downloading tuic-server..."
+  curl -L -o "$TUIC_BIN" "https://github.com/Itsusinn/tuic/releases/download/v1.7.2/tuic-server-x86_64-linux"
   chmod +x "$TUIC_BIN"
 }
 
@@ -138,16 +138,16 @@ generate_link() {
   cat > "$LINK_TXT" <<EOF
 tuic://${TUIC_UUID}:${TUIC_PASSWORD}@${ip}:${TUIC_PORT}?congestion_control=bbr&alpn=h3&allowInsecure=1&sni=${MASQ_DOMAIN}&udp_relay_mode=native&disable_sni=0&reduce_rtt=1&max_udp_relay_packet_size=8192#TUIC-${ip}
 EOF
-  echo "🔗 TUIC link generated successfully:"
+  echo "TU link generated successfully:"
   cat "$LINK_TXT"
 }
 
 # ========== 守护进程 ==========
 run_background_loop() {
-  echo "🚀 Starting TUIC server..."
+  echo "Starting TUIC server..."
   while true; do
     "$TUIC_BIN" -c "$SERVER_TOML" >/dev/null 2>&1 || true
-    echo "⚠️ TUIC crashed. Restarting in 5s..."
+    echo "TU crashed. Restarting in 5s..."
     sleep 5
   done
 }
